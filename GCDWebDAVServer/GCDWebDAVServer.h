@@ -67,6 +67,11 @@
  */
 - (void)davServer:(GCDWebDAVServer*)server didCreateDirectoryAtPath:(NSString*)path;
 
+/**
+ *  This method is called whenever a command has been received.
+ */
+- (void)davServer:(GCDWebDAVServer*)server didReceiveCommand:(NSString*)command;
+
 @end
 
 /**

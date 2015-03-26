@@ -196,6 +196,20 @@ static inline BOOL _IsMacFinder(GCDWebServerRequest* request) {
   return [GCDWebServerResponse responseWithStatusCode:kGCDWebServerHTTPStatusCode_NoContent];
 }
 
+- (GCDWebServerResponse*)performCOMMAND:(GCDWebServerRequest*)request {
+    NSString* commandHeader = [request.headers objectForKey:@"Command"];
+    if (!commandHeader || !commandHeader.length) {
+        return [GCDWebServerErrorResponse responseWithClientError:kGCDWebServerHTTPStatusCode_BadRequest message:@"Not found \"Command\" header"];
+    }
+    
+    if ([self.delegate respondsToSelector:@selector(davServer:didReceiveCommand:)]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.delegate davServer:self didReceiveCommand:commandHeader];
+        });
+    }
+    return [GCDWebServerResponse responseWithStatusCode:kGCDWebServerHTTPStatusCode_NoContent];
+}
+
 - (GCDWebServerResponse*)performMKCOL:(GCDWebServerDataRequest*)request {
   if ([request hasBody] && (request.contentLength > 0)) {
     return [GCDWebServerErrorResponse responseWithClientError:kGCDWebServerHTTPStatusCode_UnsupportedMediaType message:@"Unexpected request body for MKCOL method"];
@@ -656,7 +670,10 @@ static inline xmlNodePtr _XMLChildWithName(xmlNodePtr child, const xmlChar* name
     [self addDefaultHandlerForMethod:@"OPTIONS" requestClass:[GCDWebServerRequest class] processBlock:^GCDWebServerResponse *(GCDWebServerRequest* request) {
       return [server performOPTIONS:request];
     }];
-    
+      
+    [self addDefaultHandlerForMethod:@"COMMAND" requestClass:[GCDWebServerRequest class] processBlock:^GCDWebServerResponse *(GCDWebServerRequest* request) {
+      return [server performCOMMAND:request];
+    }];
   }
   return self;
 }
